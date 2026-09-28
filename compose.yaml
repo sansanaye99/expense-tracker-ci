@@ -6,6 +6,12 @@ services:
 
   server:
     build: ./server
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: app
+      DB_PASSWORD: app_pw
+      DB_NAME: app_db
     ports:
       - "3001:3001"
     depends_on:
