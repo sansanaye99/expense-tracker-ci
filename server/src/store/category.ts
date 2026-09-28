@@ -1,42 +1,49 @@
-import { randomUUID } from "node:crypto";
+import { pool } from "../db.js";
 import type { Category, NewCategory } from "../types/category.js";
 
-const categories: Category[] = [
-	{ id: randomUUID(), name: "Groceries" },
-	{ id: randomUUID(), name: "Transport" },
-];
+type CategoryRow = {
+  id: string;
+  name: string;
+};
 
-export function getCategories(): Category[] {
-	return categories;
+function toCategory(row: CategoryRow): Category {
+  return {
+    id: row.id,
+    name: row.name,
+  };
 }
 
-export function addCategory(newCategory: NewCategory): Category {
-	const category: Category = { id: randomUUID(), ...newCategory };
-	categories.push(category);
-	return category;
+export async function getCategories(): Promise<Category[]> {
+  const result = await pool.query<CategoryRow>(
+    "SELECT id, name FROM categories ORDER BY name",
+  );
+
+  return result.rows.map(toCategory);
 }
 
-export function updateCategory(
-	id: string,
-	update: NewCategory,
-): Category | null {
-	const category = categories.find((category) => category.id === id);
+export async function addCategory(newCategory: NewCategory): Promise<Category> {
+  const result = await pool.query<CategoryRow>(
+    "INSERT INTO categories (name) VALUES ($1) RETURNING id, name",
+    [newCategory.name],
+  );
 
-	if (!category) {
-		return null;
-	}
-
-	Object.assign(category, update);
-	return category;
+  return toCategory(result.rows[0]);
 }
 
-export function deleteCategory(id: string): boolean {
-	const index = categories.findIndex((category) => category.id === id);
+export async function updateCategory(
+  id: string,
+  update: NewCategory,
+): Promise<Category | null> {
+  const result = await pool.query<CategoryRow>(
+    "UPDATE categories SET name = $1 WHERE id = $2 RETURNING id, name",
+    [update.name, id],
+  );
 
-	if (index === -1) {
-		return false;
-	}
+  return result.rows[0] ? toCategory(result.rows[0]) : null;
+}
 
-	categories.splice(index, 1);
-	return true;
+export async function deleteCategory(id: string): Promise<boolean> {
+  const result = await pool.query("DELETE FROM categories WHERE id = $1", [id]);
+
+  return result.rowCount === 1;
 }
