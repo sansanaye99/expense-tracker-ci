@@ -7,7 +7,7 @@ import {
 } from "../store/category.js";
 import type { NewCategory } from "../types/category.js";
 
-function parseNewCategory(body: unknown): NewCategory | null {
+export function parseNewCategory(body: unknown): NewCategory | null {
   if (
     typeof body !== "object" ||
     body === null ||

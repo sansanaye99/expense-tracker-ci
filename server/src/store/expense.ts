@@ -8,7 +8,7 @@ type ExpenseRow = {
   date: string;
 };
 
-function toExpense(row: ExpenseRow): Expense {
+export function toExpense(row: ExpenseRow): Expense {
   return {
     id: row.id,
     description: row.description,
