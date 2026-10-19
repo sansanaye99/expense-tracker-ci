@@ -1,77 +1,77 @@
 import { Router } from "express";
 import {
-  addExpense,
-  deleteExpense,
-  getExpenses,
-  updateExpense,
+	addExpense,
+	deleteExpense,
+	getExpenses,
+	updateExpense,
 } from "../store/expense.js";
 import type { NewExpense } from "../types/expense.js";
 
 export function parseNewExpense(body: unknown): NewExpense | null {
-  if (typeof body !== "object" || body === null) {
-    return null;
-  }
+	if (typeof body !== "object" || body === null) {
+		return null;
+	}
 
-  const { description, amount, date } = body as Partial<NewExpense>;
+	const { description, amount, date } = body as Partial<NewExpense>;
 
-  if (
-    typeof description !== "string" ||
-    typeof amount !== "number" ||
-    typeof date !== "string"
-  ) {
-    return null;
-  }
+	if (
+		typeof description !== "string" ||
+		typeof amount !== "number" ||
+		typeof date !== "string"
+	) {
+		return null;
+	}
 
-  return { description, amount, date };
+	return { description, amount, date };
 }
 
 export const expenseRouter = Router();
 
 expenseRouter.get("/", async (_req, res) => {
-  res.json(await getExpenses());
+	res.json(await getExpenses());
 });
 
 expenseRouter.post("/", async (req, res) => {
-  const newExpense = parseNewExpense(req.body);
+	const newExpense = parseNewExpense(req.body);
 
-  if (!newExpense) {
-    res
-      .status(400)
-      .json({ error: "description, amount and date are required" });
-    return;
-  }
+	if (!newExpense) {
+		res
+			.status(400)
+			.json({ error: "description, amount and date are required" });
+		return;
+	}
 
-  const expense = await addExpense(newExpense);
-  res.status(201).json(expense);
+	const expense = await addExpense(newExpense);
+	res.status(201).json(expense);
 });
 
 expenseRouter.put("/:id", async (req, res) => {
-  const update = parseNewExpense(req.body);
+	const update = parseNewExpense(req.body);
 
-  if (!update) {
-    res
-      .status(400)
-      .json({ error: "description, amount and date are required" });
-    return;
-  }
+	if (!update) {
+		res
+			.status(400)
+			.json({ error: "description, amount and date are required" });
+		return;
+	}
 
-  const expense = await updateExpense(req.params.id, update);
+	const expense = await updateExpense(req.params.id, update);
 
-  if (!expense) {
-    res.status(404).json({ error: "Expense not found" });
-    return;
-  }
+	if (!expense) {
+		res.status(404).json({ error: "Expense not found" });
+		return;
+	}
 
-  res.json(expense);
+	res.json(expense);
 });
 
 expenseRouter.delete("/:id", async (req, res) => {
-  const deleted = await deleteExpense(req.params.id);
+	const deleted = await deleteExpense(req.params.id);
 
-  if (!deleted) {
-    res.status(404).json({ error: "Expense not found" });
-    return;
-  }
+	if (!deleted) {
+		res.status(404).json({ error: "Expense not found" });
+		return;
+	}
 
-  res.status(204).send();
+	res.status(204).send();
 });
