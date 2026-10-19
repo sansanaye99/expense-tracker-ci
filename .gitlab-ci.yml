@@ -2,6 +2,7 @@ stages:
   - lint
   - build
   - test
+  - e2e
 
 lint-client:
   stage: lint
@@ -57,3 +58,38 @@ test-server:
     - cd server
     - npm ci
     - npm test
+
+test-e2e:
+  stage: e2e
+  image: node:22
+  services:
+    - name: postgres:16
+      alias: postgres
+  variables:
+    CI: "true"
+    POSTGRES_USER: app
+    POSTGRES_PASSWORD: app_pw
+    POSTGRES_DB: app_db
+    PGHOST: postgres
+    PGPORT: "5432"
+    PGUSER: app
+    PGPASSWORD: app_pw
+    PGDATABASE: app_db
+    E2E_BASE_URL: "http://127.0.0.1:4173"
+  script:
+    - apt-get update && apt-get install -y postgresql-client curl
+    - pg_isready -h postgres -U app -d app_db
+    - psql -v ON_ERROR_STOP=1 -h postgres -U app -d app_db -f db/init/001-schema-and-seed.sql
+    - cd server
+    - npm ci
+    - npm run start:ci > /tmp/server.log 2>&1 &
+    - cd ../client
+    - npm ci
+    - npx playwright install --with-deps chromium
+    - npm run build
+    - npx vite preview --port 4173 --host 0.0.0.0 > /tmp/client.log 2>&1 &
+    - curl --retry 30 --retry-connrefused --retry-delay 1 --retry-max-time 60 -fsS http://localhost:3001/api/expenses
+    - curl --retry 30 --retry-connrefused --retry-delay 1 --retry-max-time 60 -fsS http://127.0.0.1:4173
+    - npx playwright test
+  after_script:
+    - cat /tmp/server.log /tmp/client.log 2>/dev/null || true
