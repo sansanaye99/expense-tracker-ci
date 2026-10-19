@@ -17,7 +17,8 @@ build-client:
     - cd client
     - npm ci
     - npm run build
-    lint-server:
+
+lint-server:
   stage: lint
   image: node:22
   script:
