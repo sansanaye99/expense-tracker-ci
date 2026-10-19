@@ -23,7 +23,7 @@ export async function updateExpense(
 	id: string,
 	expense: NewExpense,
 ): Promise<Expense> {
-	const res = await fetch(`${API_URL}/${id}`, {	
+	const res = await fetch(`${API_URL}/${id}`, {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(expense),
