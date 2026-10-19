@@ -17,3 +17,18 @@ build-client:
     - cd client
     - npm ci
     - npm run build
+    lint-server:
+  stage: lint
+  image: node:22
+  script:
+    - cd server
+    - npm ci
+    - npm run lint
+
+build-server:
+  stage: build
+  image: node:22
+  script:
+    - cd server
+    - npm ci
+    - npm run build
