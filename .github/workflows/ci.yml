@@ -1,0 +1,93 @@
+name: Project CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: node:22
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v6
+
+      - name: Lint client
+        working-directory: client
+        run: |
+          npm ci
+          npm run lint
+
+      - name: Lint server
+        working-directory: server
+        run: |
+          npm ci
+          npm run lint
+
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    container: node:22
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v6
+
+      - name: Build client
+        working-directory: client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build server
+        working-directory: server
+        run: |
+          npm ci
+          npm run build
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    container: node:22
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          POSTGRES_DB: app_test_db
+        options: >-
+          --health-cmd "pg_isready -U app -d app_test_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: app
+      PGPASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+      PGDATABASE: app_test_db
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v6
+
+      - name: Install PostgreSQL client
+        run: |
+          apt-get update
+          apt-get install -y postgresql-client
+
+      - name: Load database schema
+        run: psql -v ON_ERROR_STOP=1 -f db/init/001-schema-and-seed.sql
+
+      - name: Run server tests
+        working-directory: server
+        run: |
+          npm ci
+          npm test
